@@ -1,0 +1,4 @@
+example command:
+
+    # to generate 500 fusion transcripts, including 100 break-exon fusions
+    ./FTSplus RESOURCES/gencode.v29.annotation.gff3 RESOURCES/GRCh38.p12.genome.fa 500 100 summary > fusion.fasta

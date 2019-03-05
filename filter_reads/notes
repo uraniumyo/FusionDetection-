@@ -1,0 +1,4 @@
+example command:
+
+    # input sorted bamfile and gff3 annotation file, output filtered fusion reads
+    python reads_filter.py fusion_sorted.bam gencode.v29.annotation.gff3 filtered_fusion_reads.txt
