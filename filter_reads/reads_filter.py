@@ -1,3 +1,15 @@
+
+
+#####################################################################
+# input  - sorted bam file
+#        - gff3 annotation
+# output - query reads that mapped to at least two different genes
+#           
+# (when mapping with high accuracy, there may be more than one
+#  alignments for one gene, eg one for each exon, this script merges
+#  alignments on the same gene for simplicity)
+#####################################################################
+
 import pysam
 import sys
 import os
@@ -74,7 +86,6 @@ for key in queryInfo.keys():
 	Pos = []
 	exonID = 'pre-geneID'
 	line = []
-	fout.write(key)
 
 	# for each alignment 
 	for item in queryInfo[key]:
@@ -97,12 +108,15 @@ for key in queryInfo.keys():
 		else:
 			line[-4] = str(item[2])
 		exonID = geneID
+	# ignore if only 1 alignment remain
+	if len(line) < 7:
+		continue
+	fout.write(key)
 	fout.write('\t')
 
-	# write merged alignment info, one read per line
+	# write merged alignments info, one read per line
 	for x in line:
 		fout.write(str(x)+'\t')
-
 	# output fusion type 
 	# if all alignment chr the same
 	if ''.join(Chr) == Chr[0]*len(Chr):
