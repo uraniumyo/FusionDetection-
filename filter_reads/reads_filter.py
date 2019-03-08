@@ -5,18 +5,16 @@ import re
 
 def findGeneID(range,GFF3dic):
 	temp = ''
-	# print range
 	if range[0] in GFF3dic.keys():
 		for x in GFF3dic[range[0]]:
-			# print x
+			# if strictly within range 
 			if int(x[0]) <= int(range[1]) and int(x[1]) >= int(range[2]):
-				# print x
 				temp = x[-1]
 				break
 	return temp
 
 # read sorted bam file 
-bamfile = pysam.AlignmentFile(sys.argv[1],"rb")
+bamfile = pysam.AlignmentFile(sys.argv[1],'rb')
 # read gff3 annotation 
 annotation = open(sys.argv[2],'r')
 # write filtered fusion reads
@@ -38,7 +36,7 @@ for i in annotation.readlines():
 	geneID = re.match(r'ID=(.*);gene_id=',arr[-1]).group(1)
 	geneName = re.search(r'gene_name=(.*);level',arr[-1]).group(1)
 	featureType = re.search(r'gene_type=(.*);gene_name',arr[-1]).group(1)
-	# print geneName
+	# print geneName 
 	IDtoName[geneID] = geneName+'\t'+featureType
 	if arr[0] not in dicGene.keys():
 		dicGene[arr[0]] = [[arr[3],arr[4],geneID]]
@@ -74,23 +72,36 @@ for key in queryInfo.keys():
 		continue
 	Chr = []
 	Pos = []
+	exonID = 'pre-geneID'
+	line = []
 	fout.write(key)
 
+	# for each alignment 
 	for item in queryInfo[key]:
 		Chr.append(item[0])
 		Pos.append(item[2])
 		geneID = ''
 		geneID = findGeneID(item,dicGene)
-		fout.write('\t')
 
-		for s in item:
-			fout.write('\t'+str(s))
-
-		if geneID != '':
-			fout.write('\t'+geneID+'\t'+IDtoName[geneID])
+		# if different from last alignment, append info
+		if str(exonID) != str(geneID):
+			for s in item:
+				line.append(s)
+			if geneID != '':
+				line.append(geneID)
+				line.append(IDtoName[geneID])
+			else:
+				line.append(str('NULL'))
+				line.append(str('NULL\tNUll'))
+		# if same with last alignment, merge the pos union
 		else:
-			fout.write('\tNULL\tNULL\tNULL')
+			line[-4] = str(item[2])
+		exonID = geneID
 	fout.write('\t')
+
+	# write merged alignment info, one read per line
+	for x in line:
+		fout.write(str(x)+'\t')
 
 	# output fusion type 
 	# if all alignment chr the same

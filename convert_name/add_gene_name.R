@@ -23,5 +23,5 @@ colnames(sumtable)[ncol(sumtable)] <- c('genename_B')
 
 # write to csv
 write.table(x = sumtable ,file = "fusion_summary.csv",row.names = TRUE,
-          col.names = TRUE)
+          col.names = TRUE, sep = '\t')
 
