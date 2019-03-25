@@ -1,0 +1,6 @@
+example command:
+
+    # input filtered reads, true fusion summary, duplicated gene family data and threshold for breakpoint distance 
+    # output TP/FP results, breakpoint distances and recall rate
+
+    python determine_TP_FP.py filtered_reads.txt fusion_summary.csv dgd_Hsa_all_v71.tsv 20 > TPFP_result.txt
