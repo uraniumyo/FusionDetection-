@@ -17,10 +17,13 @@ import re
 
 def findGeneID(range,GFF3dic):
 	temp = ''
+	#range[0]:chr; range[1],[2]:alignment start/end
 	if range[0] in GFF3dic.keys():
+		# x: each gene range in GFF3dic[chr]
 		for x in GFF3dic[range[0]]:
 			# if strictly within range 
 			if int(x[0]) <= int(range[1]) and int(x[1]) >= int(range[2]):
+				# x[-1]: geneID
 				temp = x[-1]
 				break
 	return temp
@@ -41,6 +44,7 @@ IDtoName = {}
 
 # extract info from annotation 
 for i in annotation.readlines():
+	# get gene ranges
 	if not re.search(r'\tgene\t',i):
 		continue
 	i = i.strip()
@@ -48,14 +52,15 @@ for i in annotation.readlines():
 	geneID = re.match(r'ID=(.*);gene_id=',arr[-1]).group(1)
 	geneName = re.search(r'gene_name=(.*);level',arr[-1]).group(1)
 	featureType = re.search(r'gene_type=(.*);gene_name',arr[-1]).group(1)
-	# print geneName 
+	# genID:geneName+featuretype
 	IDtoName[geneID] = geneName+'\t'+featureType
 	if arr[0] not in dicGene.keys():
 		dicGene[arr[0]] = [[arr[3],arr[4],geneID]]
 	else:
 		dicGene[arr[0]].append([arr[3],arr[4],geneID])
-	# print dicGene[arr[0]][0][-1]
+	# arr[0]:chr,arr[3],[4]: range coordinates
 annotation.close()
+
 
 # extract info from bamfile 
 for r in bamfile:
@@ -77,26 +82,28 @@ for r in bamfile:
 	else:
 		queryInfo[r.query_name].append([r.reference_name,r.reference_start+1,r.reference_end+1,strand])
 
-# write output 
+# for each query read
 for key in queryInfo.keys():
 	# keep reads having at least 2 alignments
 	if not len(queryInfo[key]) >= 2:
 		continue
+
 	Chr = []
 	Pos = []
 	exonID = 'pre-geneID'
 	line = []
 
-	# for each alignment 
-	for item in queryInfo[key]:
-		Chr.append(item[0])
-		Pos.append(item[2])
+	# for each alignment in query read
+	for align in queryInfo[key]:
+		#alignments[0]:chr;[1],[2]:start,end 
+		Chr.append(align[0])
+		Pos.append(align[2])
 		geneID = ''
-		geneID = findGeneID(item,dicGene)
+		geneID = findGeneID(align,dicGene)
 
 		# if different from last alignment, append info
 		if str(exonID) != str(geneID):
-			for s in item:
+			for s in align:
 				line.append(s)
 			if geneID != '':
 				line.append(geneID)
@@ -106,7 +113,7 @@ for key in queryInfo.keys():
 				line.append(str('NULL\tNUll'))
 		# if same with last alignment, merge the pos union
 		else:
-			line[-4] = str(item[2])
+			line[-4] = str(align[2])
 		exonID = geneID
 	# ignore if only 1 alignment remain
 	if len(line) < 7:
@@ -120,7 +127,8 @@ for key in queryInfo.keys():
 	# output fusion type 
 	# if all alignment chr the same
 	if ''.join(Chr) == Chr[0]*len(Chr):
-		if abs(Pos[0]-Pos[1]) <= 400000:
+		# set read-through distance 200,000bp
+		if abs(Pos[0]-Pos[1]) <= 200000:
 			fout.write('read-through')
 		else:
 			fout.write('intra-chromosomal')
